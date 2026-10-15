@@ -106,4 +106,5 @@
 
 ## Демонстрация
 
-**Видео:** 
+**Видео:** https://github.com/user-attachments/assets/8f511291-c6a4-4be4-b744-f183bb99ad17
+
