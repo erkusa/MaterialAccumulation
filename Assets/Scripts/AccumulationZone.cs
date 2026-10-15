@@ -155,37 +155,71 @@ public class AccumulationZone : MonoBehaviour
         float radius,
         float dt)
     {
-        bool changed = false;
+        if (radius <= 0f || dt <= 0f)
+            return false;
+
+        float cellSize = terrain.CellSize;
+        float halfSize = terrain.Size * 0.5f;
+        int resolution = terrain.Resolution;
+
+        int minX = Mathf.Clamp(
+            Mathf.FloorToInt((center.x - radius + halfSize) / cellSize),
+            0, resolution
+        );
+
+        int maxX = Mathf.Clamp(
+            Mathf.CeilToInt((center.x + radius + halfSize) / cellSize),
+            0, resolution
+        );
+
+        int minZ = Mathf.Clamp(
+            Mathf.FloorToInt((center.z - radius + halfSize) / cellSize),
+            0, resolution
+        );
+
+        int maxZ = Mathf.Clamp(
+            Mathf.CeilToInt((center.z + radius + halfSize) / cellSize),
+            0, resolution
+        );
+
         float radiusSquared = radius * radius;
+        bool changed = false;
 
-        int vertexCount =
-            (terrain.Resolution + 1) * (terrain.Resolution + 1);
-
-        for (int i = 0; i < vertexCount; i++)
+        for (int z = minZ; z <= maxZ; z++)
         {
-            Vector3 vertex = terrain.GetVertexPosition(i);
+            for (int x = minX; x <= maxX; x++)
+            {
+                int index = z * (resolution + 1) + x;
 
-            float dx = vertex.x - center.x;
-            float dz = vertex.z - center.z;
+                Vector3 vertex = terrain.GetVertexPosition(index);
 
-            float distanceSquared = dx * dx + dz * dz;
+                float dx = vertex.x - center.x;
+                float dz = vertex.z - center.z;
 
-            if (distanceSquared >= radiusSquared)
-                continue;
+                float distanceSquared = dx * dx + dz * dz;
 
-            float hemisphereFactor = Mathf.Sqrt(
-                1f - distanceSquared / radiusSquared
-            );
+                if (distanceSquared >= radiusSquared)
+                    continue;
 
-            float amount =
-                accumulationSpeed * dt * hemisphereFactor;
+                float hemisphereFactor = Mathf.Sqrt(
+                    1f - distanceSquared / radiusSquared
+                );
 
-            terrain.AddMaterial(i, amount);
-            changed = true;
+                float amount =
+                    Mathf.Max(0f, accumulationSpeed) *
+                    dt * hemisphereFactor;
+
+                if (amount <= 0f)
+                    continue;
+
+                terrain.AddMaterial(index, amount);
+                changed = true;
+            }
         }
 
         return changed;
     }
+
 
     private void OnDrawGizmos()
     {
